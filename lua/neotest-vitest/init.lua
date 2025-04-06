@@ -115,49 +115,65 @@ end
 function adapter.discover_positions(path)
   local query = [[
     ; -- Namespaces --
-    ; Matches: `describe('context')`
+    ; Matches: `describe('context')` or `suite('context')`
     ((call_expression
-      function: (identifier) @func_name (#eq? @func_name "describe")
-      arguments: (arguments (string (string_fragment) @namespace.name) (arrow_function))
+      function: (identifier) @func_name (#match? @func_name "^(describe|suite)$")
+      arguments: (arguments
+        (string (string_fragment) @namespace.name)
+        (arrow_function))
     )) @namespace.definition
-    ; Matches: `describe.only('context')`
+
+    ; Matches: `describe.only('context')` or `suite.only('context')`
     ((call_expression
       function: (member_expression
-        object: (identifier) @func_name (#any-of? @func_name "describe")
+        object: (identifier) @func_name (#match? @func_name "^(describe|suite)$")
       )
-      arguments: (arguments (string (string_fragment) @namespace.name) (arrow_function))
+      arguments: (arguments
+        (string (string_fragment) @namespace.name)
+        (arrow_function))
     )) @namespace.definition
-    ; Matches: `describe.each(['data'])('context')`
+
+    ; Matches: `describe.each([...])('context')` or `suite.each([...])('context')`
     ((call_expression
       function: (call_expression
         function: (member_expression
-          object: (identifier) @func_name (#any-of? @func_name "describe")
+          object: (identifier) @func_name (#match? @func_name "^(describe|suite)$")
         )
       )
-      arguments: (arguments (string (string_fragment) @namespace.name) (arrow_function))
+      arguments: (arguments
+        (string (string_fragment) @namespace.name)
+        (arrow_function))
     )) @namespace.definition
 
     ; -- Tests --
-    ; Matches: `test('test') / it('test')`
+    ; Matches: `test('name')` or `it('name')`
     ((call_expression
-      function: (identifier) @func_name (#any-of? @func_name "it" "test")
-      arguments: (arguments (string (string_fragment) @test.name) (arrow_function))
+      function: (identifier) @func_name (#match? @func_name "^(it|test)$")
+      arguments: (arguments
+        (string (string_fragment) @test.name)
+        (arrow_function))
     )) @test.definition
-    ; Matches: `test.only('test') / it.only('test')`
+
+    ; Matches: `test.only('name')` or `it.only('name')`
     ((call_expression
       function: (member_expression
-        object: (identifier) @func_name (#any-of? @func_name "test" "it")
+        object: (identifier) @func_name (#match? @func_name "^(it|test)$")
       )
-      arguments: (arguments (string (string_fragment) @test.name) (arrow_function))
+      arguments: (arguments
+        (string (string_fragment) @test.name)
+        (arrow_function))
     )) @test.definition
-    ; Matches: `test.each(['data'])('test') / it.each(['data'])('test')`
+
+    ; Matches: `test.each([...])('name')` or `it.each([...])('name')`
     ((call_expression
       function: (call_expression
         function: (member_expression
-          object: (identifier) @func_name (#any-of? @func_name "it" "test")
+          object: (identifier) @func_name (#match? @func_name "^(it|test)$")
         )
       )
-      arguments: (arguments (string (string_fragment) @test.name) (arrow_function))
+      arguments: (arguments
+        (string (string_fragment) @test.name)
+        (arrow_function))
     )) @test.definition
   ]]
   query = query .. string.gsub(query, "arrow_function", "function_expression")
