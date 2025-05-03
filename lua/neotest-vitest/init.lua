@@ -313,13 +313,15 @@ function adapter.build_spec(args)
   end
 
   local binary = args.vitestCommand or getVitestCommand(pos.path)
-  local config = getVitestConfig(pos.path) or "vitest.config.js"
-  local command = vim.split(binary, "%s+")
+local config = getVitestConfig(pos.path) or "vitest.config.js"
 
-  if util.path.exists(config) then
-    -- only use config if available
-    table.insert(command, "--config=" .. config)
-  end
+-- FIX: Support both string and table binaries
+local command = type(binary) == "string" and vim.split(binary, "%s+") or vim.deepcopy(binary)
+
+if util.path.exists(config) then
+  table.insert(command, "--config=" .. config)
+end
+
 
   vim.list_extend(command, {
     "--watch=false",
