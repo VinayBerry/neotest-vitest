@@ -183,22 +183,23 @@ end
 ---@param path string
 ---@return string
 local function getVitestCommand(path)
+  local is_windows = vim.loop.os_uname().version:match("Windows")
   local rootPath = util.find_node_modules_ancestor(path)
-  local vitestBinary = util.path.join(rootPath, "node_modules", ".bin", "vitest")
+  local vitestBinary = util.path.join(rootPath, "node_modules", ".bin", is_windows and "vitest.cmd" or "vitest")
 
   if util.path.exists(vitestBinary) then
-    return vitestBinary
+    return is_windows and { "node", util.path.join(rootPath, "node_modules", "vitest", "vitest.mjs") } or vitestBinary
   end
 
   local gitRootPath = util.find_git_ancestor(path)
   if gitRootPath then
-    vitestBinary = util.path.join(gitRootPath, "node_modules", ".bin", "vitest")
+    vitestBinary = util.path.join(gitRootPath, "node_modules", ".bin", is_windows and "vitest.cmd" or "vitest")
     if util.path.exists(vitestBinary) then
-      return vitestBinary
+      return is_windows and { "node", util.path.join(gitRootPath, "node_modules", "vitest", "vitest.mjs") } or vitestBinary
     end
   end
 
-  return "vitest"
+  return is_windows and { "node", "node_modules/vitest/vitest.mjs" } or "vitest"
 end
 
 local vitestConfigPattern = util.root_pattern("{vite,vitest}.config.{js,ts,mjs,mts}")
